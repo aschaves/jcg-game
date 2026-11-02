@@ -26,6 +26,25 @@ torso = poly_cut(SRC, [(700, 280), (960, 280), (968, 370), (1004, 412), (1004, 1
 t = np.asarray(torso).copy(); yy = np.arange(t.shape[0])[:, None] + TB[1]
 skin = (t[..., 0].astype(int) > t[..., 1].astype(int) + 22) & (t[..., 0] > 110) & (yy < 372)
 t[..., 3][skin] = 0
+# remove the headphones: dark pixels around the neck (zip excluded); fill the collar from the surrounding fabric
+xx = np.arange(t.shape[1])[None, :] + TB[0]
+L = lum(t.astype(float))
+cups = (yy < 415) & (xx > 730) & (xx < 945) & (L < 100) & (t[..., 3] > 0) & ~((xx > 808) & (xx < 850) & (yy > 365))
+cups = np.asarray(Image.fromarray((cups * 255).astype('uint8')).filter(ImageFilter.MaxFilter(5))) > 0
+cups &= (yy < 420) & ~((xx > 808) & (xx < 850) & (yy > 365))
+t[..., 3][cups & (yy < 350)] = 0
+hole = cups & (yy >= 350)
+f = t.astype(float); known = (~hole) & (t[..., 3] > 200)
+for _ in range(400):
+    if not hole.any(): break
+    acc = np.zeros_like(f[..., :3]); cnt = np.zeros(f.shape[:2])
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        sh = np.roll(np.roll(f[..., :3], dy, 0), dx, 1); kn = np.roll(np.roll(known, dy, 0), dx, 1)
+        acc += sh * kn[..., None]; cnt += kn
+    fill = hole & (cnt > 0)
+    f[..., :3][fill] = acc[fill] / cnt[fill][:, None]; f[..., 3][fill] = 255
+    known = known | fill; hole = hole & ~fill
+t = f.clip(0, 255).astype('uint8')
 torso = Image.fromarray(t)
 torso = scaled(torso, BS * SLIM, BS)
 # hanging arm, split at the elbow
@@ -53,6 +72,10 @@ shoe = Image.fromarray(s).rotate(90, expand=True)
 shoe = scaled(shoe, BS * 0.95, BS * 0.95)
 SHOE_ANK = (shoe.width * 0.30, shoe.height * 0.22)      # where the ankle enters the shoe
 LEG = np.asarray(SRC)[1100:1250, 820:900][..., :3].reshape(-1, 3).mean(0)   # leggings colour
+
+PONY = Image.open('ponytail.png'); PONY = scaled(PONY, 0.55 * HS, 0.55 * HS)
+PONY_PIV = (122 * 0.55 * HS, 25 * 0.55 * HS)
+PONY_AT = (98, 340)        # canonical head point where the hair tie sits (back of the head, nape level)
 
 def head(name):
     h = Image.open(f'head_{name}.png'); return scaled(h, HS, HS)
@@ -118,6 +141,9 @@ def frame(pose):
     arm(c, shR, *pose['armR'], mirror=True, dark=0.82) if pose.get('armR') else None
     leg(c, hipR, *pose['legR'], dark=0.78)
     h = head(pose['face']); hcx, hcy = cx + pose.get('hdx', 0), ty + 22 + bob * 0.3
+    tl = math.radians(pose.get('tilt', 0)); vx, vy = (PONY_AT[0] - 200) * HS, (PONY_AT[1] - 430) * HS
+    pa = (hcx + vx * math.cos(tl) - vy * math.sin(tl), hcy + vx * math.sin(tl) + vy * math.cos(tl))
+    put(c, PONY, PONY_PIV, pa, pose.get('pony', 0))
     put(c, h, (200 * HS, 430 * HS), (hcx, hcy), pose.get('tilt', 0))
     leg(c, hipL, *pose['legL'])
     put(c, torso, (torso.width / 2, torso.height), (cx, hem_y), pose.get('lean', 0))
@@ -131,12 +157,13 @@ def poses():
         ph = 2 * math.pi * i / 6; s, co = math.sin(ph), math.cos(ph)
         bendL = 18 + 70 * max(0, co); bendR = 18 + 70 * max(0, -co)
         P[f'run{i+1}'] = dict(face='smile', legL=(34 * s + 6, bendL), legR=(-34 * s + 6, bendR),
-                               armL=(38 * s, 75), armR=(-38 * s, 75), bob=-7 * abs(s), lean=4, tilt=2 * s, dx=-6)
-    P['idle1'] = dict(face='smile', legL=(-3, 0), legR=(4, 0), armL=(4, -8), akimbo=True)
-    P['idle2'] = dict(face='smile', legL=(-3, 0), legR=(4, 0), armL=(6, -12), akimbo=True, bob=1.5, tilt=-2)
-    P['idle3'] = dict(face='smirk', legL=(-3, 0), legR=(4, 0), armL=(4, -8), akimbo=True, tilt=3)
-    P['jump1'] = dict(face='laugh', legL=(55, 85), legR=(-22, 25), armL=(-150, -15), armR=(150, 15), bob=-4)
-    P['hurt1'] = dict(face='tongue', legL=(18, 5), legR=(-18, 5), armL=(-58, -30), armR=(58, 30))
+                               armL=(38 * s, 75), armR=(-38 * s, 75), bob=-7 * abs(s), lean=4, tilt=2 * s, dx=-6,
+                               pony=-48 + 14 * math.sin(ph * 2 + 1.2))
+    P['idle1'] = dict(face='smile', legL=(-3, 0), legR=(4, 0), armL=(4, -8), akimbo=True, pony=-4)
+    P['idle2'] = dict(face='smile', legL=(-3, 0), legR=(4, 0), armL=(6, -12), akimbo=True, bob=1.5, tilt=-2, pony=-8)
+    P['idle3'] = dict(face='smirk', legL=(-3, 0), legR=(4, 0), armL=(4, -8), akimbo=True, tilt=3, pony=-2)
+    P['jump1'] = dict(face='laugh', legL=(55, 85), legR=(-22, 25), armL=(-150, -15), armR=(150, 15), bob=-4, pony=-62)
+    P['hurt1'] = dict(face='tongue', legL=(18, 5), legR=(-18, 5), armL=(-58, -30), armR=(58, 30), pony=-85)
     return P
 
 if __name__ == '__main__':
