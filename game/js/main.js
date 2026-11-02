@@ -191,7 +191,7 @@
     Sound.synth('win');
   }
 
-  // The "final" photos (the family member holding Lola) were in the 2011 assets but never shown; they animate here.
+  // The level-complete card animates the level's "final" frames.
   let finalTimer = null;
   function startFinalAnim(framesList) {
     stopFinalAnim();
@@ -338,6 +338,7 @@
     const paths = [...UI_IMAGES];
     for (const lv of LEVELS) {
       paths.push(lv.background, lv.foreground);
+      (lv.layers || []).forEach((l) => paths.push(l.image));
       paths.push(...Object.values(lv.tiles));
       for (const def of Object.values(lv.legend)) def.frames.forEach((f) => paths.push(f[0]));
       lv.final.forEach((f) => paths.push(f[0]));

@@ -31,14 +31,26 @@ const Render = (() => {
     ctx.fillStyle = level.bgColor || '#000';
     ctx.fillRect(0, 0, view.w, view.h);
 
-    // Parallax layers: a layer narrower than the map scrolls slower, exactly as in the original renderer.
-    for (const key of ['background', 'foreground']) {
-      const img = Assets.get(level[key]);
+    // Parallax layers. Each level lists its layers back to front:
+    //   mode 'stretch' – the layer spans the whole level once, scrolling slower the narrower it is
+    //                    (the original renderer's rule); good for distant scenery that doesn't repeat.
+    //   mode 'tile'    – the layer repeats horizontally and scrolls at `speed` × the camera.
+    // y is the layer's top in view pixels. Levels without `layers` use background/foreground as before.
+    const layers = level.layers || ['background', 'foreground'].filter((k) => level[k]).map((k) => ({ image: level[k], bottom: true }));
+    for (const L of layers) {
+      const img = Assets.get(L.image);
       if (!img) continue;
-      const denom = world.mapW - view.w;
-      let x = 0;
-      if (denom > 0 && img.width > view.w) x = -camX * (img.width - view.w) / denom;
-      ctx.drawImage(img, Math.round(x), view.h - img.height + Math.round(world.shakeY));
+      const y = (L.bottom ? view.h - img.height : L.y || 0) + Math.round(world.shakeY);
+      if (L.mode === 'tile') {
+        const w = img.width;
+        let x = -((camX * (L.speed || 1)) % w);
+        for (x = Math.round(x); x < view.w; x += w) ctx.drawImage(img, x, y);
+      } else {
+        const denom = world.mapW - view.w;
+        let x = 0;
+        if (denom > 0 && img.width > view.w) x = -camX * (img.width - view.w) / denom;
+        ctx.drawImage(img, Math.round(x), y);
+      }
     }
 
     // Tiles (only the visible columns)
@@ -52,7 +64,7 @@ const Render = (() => {
       }
     }
 
-    // Sprites: pickups and the goal first, then creatures, then Lola on top.
+    // Sprites: pickups and the goal first, then creatures, then the player on top.
     const visible = (e) => e.x + e.w > camX - 80 && e.x < camX + view.w + 80;
     for (const e of world.entities) if (e.type !== 'enemy' && visible(e)) drawEntity(ctx, e, camX, offY, t);
     for (const e of world.entities) if (e.type === 'enemy' && visible(e)) drawEntity(ctx, e, camX, offY, t);

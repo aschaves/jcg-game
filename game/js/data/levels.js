@@ -1,11 +1,11 @@
-// Level definitions. The layouts live in maps.js (verbatim from 2011); this file explains what
-// each character means in each level and which family assets it uses.
+// Level definitions. The layouts live in maps.js; this file explains what each character means in
+// each level and which assets it uses.
 //
 // Entity types:
 //   treat  – collectible, adds score
 //   music  – collectible that also toggles the drum track in the music (as in the original)
-//   enemy  – walks (or flies) and catches Lola; stomping it from above defeats it
-//   goal   – the family member waiting at the end of the level
+//   enemy  – walks (or flies) and catches the player; stomping it from above defeats it
+//   goal   – what waits at the end of the level
 //
 // Speeds are in pixels per second (the original used pixels per millisecond: 0.05 -> 50).
 
@@ -29,72 +29,31 @@ const goal = (name, fr, box) => ({ type: 'goal', name, frames: fr, box });
 
 const LEVELS = [
   {
-    id: 'home',
-    name: { en: 'Home Sweet Home', pt: 'Lar Doce Lar' },
-    subtitle: { en: 'Treats are hidden all over the kitchen', pt: 'Tem petisco escondido pela cozinha toda' },
-    found: 'foundHome',
-    bgColor: '#d9d3c7',
-    background: IMG + 'home/bg.png',
-    foreground: null,
-    tiles: tileset('home', 'ABCDEFGHI'),
-    rows: MAPS.home,
+    id: 'park',
+    name: { en: 'Saturday parkrun', pt: 'parkrun de sábado' },
+    subtitle: { en: 'Greenwich Peninsula. Grab the croissants, dodge the wine and the work laptop!', pt: 'Greenwich Peninsula. Pegue os croissants, fuja do vinho e do laptop do trabalho!' },
+    found: 'foundPark',
+    bgColor: '#88d5fc',
+    // Three parallax layers: sky with the cable cars, Canary Wharf across the river, the riverside walkway.
+    layers: [
+      { image: IMG + 'park/sky.png', y: 0, mode: 'stretch' },
+      { image: IMG + 'park/city.png', y: 150, mode: 'stretch' },
+      { image: IMG + 'park/path.png', y: 400, mode: 'tile', speed: 0.8 },
+    ],
+    // Ground: A B C top (Q with a cone), D E F kerb row (R with bike racks), G H I soil; J K L floating platforms.
+    tiles: Object.fromEntries([...'ABCDEFGHIJKLQR'].map((ch) => [ch, `${IMG}park/tile_${ch}.png`])),
+    rows: MAPS.park,
     spawn: { col: 3 },
     legend: {
-      'o': treat('bone', frames('home/bone', [1, 2], 100), 100),
-      '!': music('bonbon', frames('home/bonbon', [1, 2], 150), 250),
-      '1': enemy('walker', frames('home/walker', [1, 2, 3], 250), { speed: 50, box: { ox: 26, oy: 10, w: 91, h: 184 } }),
-      '2': enemy('shampoo', frames('home/shampoo', [1, 2, 3, 2], 50), { speed: 200, flying: true, box: { ox: 4, oy: 4, w: 60, h: 82 } }),
-      '-': goal('goal', frames('home/goal', [1, 2, 3, 2], 150), { ox: 10, oy: 70, w: 88, h: 111 }),
+      'o': treat('croissant', frames('park/croissant', [1, 2], [260, 260]), 100, { ox: 6, oy: 16, w: 68, h: 40 }),
+      '!': music('asics', frames('park/asics', [1, 1, 2], [300, 300, 200]), 250),
+      '1': enemy('waiter', frames('park/waiter', [1, 2, 3, 4], 180), { speed: 60, turnAtEdges: true, box: { ox: 40, oy: 14, w: 62, h: 182 } }),
+      '2': enemy('wine', frames('park/bottle', [1, 2, 3, 4, 5, 6, 7, 8], 70), { speed: 190, flying: true, box: { ox: 30, oy: 30, w: 50, h: 50 } }),
+      '3': enemy('laptop', frames('park/laptop', [1, 2, 3, 2], 110), { speed: 140, flying: true, box: { ox: 36, oy: 10, w: 78, h: 62 } }),
+      '-': goal('finish', frames('park/finish', [1, 2, 3], 220), { ox: 20, oy: 30, w: 160, h: 230 }),
     },
-    final: frames('home/final', [1, 2, 3, 2], 450),
-  },
-  {
-    id: 'praca',
-    name: { en: 'A Day at the Praça', pt: 'Um Dia na Praça' },
-    subtitle: { en: 'Watch out for the other pets', pt: 'Cuidado com os outros bichos' },
-    found: 'foundPraca',
-    bgColor: '#33d6f5',
-    background: IMG + 'praca/bg.png',
-    foreground: IMG + 'praca/fg.png',
-    tiles: tileset('praca', 'JKLMNOPQR'),
-    rows: MAPS.praca,
-    spawn: { col: 3 },
-    // The cat sprite existed in the 2011 assets but was never placed on the map; it patrols two platforms here.
-    extras: [{ ch: '(', col: 22, row: 5 }, { ch: '(', col: 44, row: 6 }],
-    legend: {
-      'o': treat('bone', frames('home/bone', [1, 2], 100), 100),
-      '!': music('bonbon', frames('home/bonbon', [1, 2], 150), 250),
-      '@': treat('poop', frames('praca/poop', [1, 2, 3], 100), 50, { ox: 12, oy: 20, w: 59, h: 55 }),
-      '$': enemy('dog', frames('praca/dog', [1, 2, 3], [150, 250, 100]), { speed: 100, box: { ox: 14, oy: 34, w: 123, h: 140 } }),
-      '(': enemy('cat', frames('praca/cat', [1, 2, 3, 1, 2], [150, 250, 100, 500, 500]), { speed: 50, turnAtEdges: true, box: { ox: 18, oy: 16, w: 162, h: 112 } }),
-      '2': enemy('shampoo', frames('home/shampoo', [1, 2, 3, 2], 50), { speed: 200, flying: true, box: { ox: 4, oy: 4, w: 60, h: 82 } }),
-      '*': goal('goal', frames('praca/goal', [1, 2, 3], [100, 250, 250]), { ox: 8, oy: 8, w: 69, h: 224 }),
-    },
-    final: frames('praca/final', [1, 2, 3, 2], 450),
-  },
-  {
-    id: 'titia',
-    name: { en: "Rafaela's bedroom", pt: 'Quarto da Rafaela' },
-    subtitle: { en: 'Sweets, sweets everywhere', pt: 'Doce, doce por todo lado' },
-    found: 'foundTitia',
-    bgColor: '#f7b3d0',
-    background: IMG + 'titia/bg.png',
-    foreground: IMG + 'titia/fg.png',
-    // W and X are deliberately out of alphabetical order. The 2011 game drew tiles from a
-    // flat images/Ltile_<char>.png set, and when the Rafaela art was copied into it the E/F
-    // pair was swapped: Rtile_E became Ltile_X and Rtile_F became Ltile_W. So the map's W is
-    // the top-right corner (tile_F) and its X is the top-left one (tile_E).
-    tiles: tileset('titia', 'STUVXWYZ['),
-    rows: MAPS.titia,
-    spawn: { col: 3 },
-    legend: {
-      '.': music('heartchoc', frames('titia/heartchoc', [1, 2, 1, 2], [100, 250, 150, 350]), 250),
-      ',': treat('donut', frames('titia/donut', [1, 2], [100, 250]), 100),
-      '<': treat('muffin', frames('titia/muffin', [1, 2], [100, 250]), 100),
-      '>': treat('lollipop', frames('titia/lollipop', [1, 2], [100, 250]), 100),
-      '^': goal('goal', frames('titia/goal', [1, 2, 3], [100, 250, 250]), { ox: 12, oy: 10, w: 104, h: 232 }),
-    },
-    final: frames('titia/final', [1, 2], 500),
+    // Placeholder until we know who is waiting at the finish.
+    final: frames('juliana/jump', [1], 500),
   },
 ];
 
