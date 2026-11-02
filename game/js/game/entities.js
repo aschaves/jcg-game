@@ -1,4 +1,4 @@
-// Game objects: Lola, the family members and pets that chase her, and the treats she collects.
+// Game objects: the player, the creatures that chase her, the collectibles and the goal.
 const TILE = 64;
 const GRAVITY = 2000;      // px/s² (the original used 0.002 px/ms²)
 const MAX_FALL = 1500;
@@ -86,7 +86,7 @@ class Creature extends Entity {
 
 class Player extends Creature {
   constructor(anims, box) {
-    super({ name: 'lola', box }, anims.idle);
+    super({ name: 'player', box }, anims.idle);
     this.type = 'player';
     this.anims = anims;
     this.coyote = 0;
@@ -99,8 +99,10 @@ class Player extends Creature {
     this.setState(ST.DYING);
     this.vx = 0;
     this.vy = -720;
-    this.flipY = true;
+    this.flipY = false;   // stay upright so the tongue-out face is visible while she spins away
     this.squash = 0;
+    this.anim = this.anims.hurt;
+    this.anim.start();
   }
   update(dt) {
     this.anim.update(dt);

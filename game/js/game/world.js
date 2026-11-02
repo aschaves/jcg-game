@@ -46,7 +46,7 @@ class World {
     this.rows.forEach((row, ty) => { [...row].forEach((ch, tx) => this.spawn(ch, tx, ty)); });
     (level.extras || []).forEach((e) => this.spawn(e.ch, e.col, e.row));
 
-    const anims = { run: Anim.fromList(PLAYER.run), idle: Anim.fromList(PLAYER.idle), jump: Anim.fromList(PLAYER.jump) };
+    const anims = { run: Anim.fromList(PLAYER.run), idle: Anim.fromList(PLAYER.idle), jump: Anim.fromList(PLAYER.jump), hurt: Anim.fromList(PLAYER.hurt || PLAYER.jump) };
     this.player = new Player(anims, PLAYER.box);
     const col = (level.spawn && level.spawn.col) || 3;
     this.player.x = col * TILE + (TILE - this.player.box.w) / 2 - this.player.box.ox;

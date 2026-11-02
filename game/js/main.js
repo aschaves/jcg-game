@@ -342,7 +342,7 @@
       for (const def of Object.values(lv.legend)) def.frames.forEach((f) => paths.push(f[0]));
       lv.final.forEach((f) => paths.push(f[0]));
     }
-    [PLAYER.run, PLAYER.idle, PLAYER.jump].forEach((fr) => fr.forEach((f) => paths.push(f[0])));
+    [PLAYER.run, PLAYER.idle, PLAYER.jump, PLAYER.hurt].forEach((fr) => fr.forEach((f) => paths.push(f[0])));
     return paths;
   }
 

@@ -98,12 +98,14 @@ const LEVELS = [
   },
 ];
 
-// Lola herself: three photos, used for running, idling (the original's little "breathing" loop) and jumping.
+// Juliana, the player: photo cut-out frames (oversized photo head on a rigged body in her running kit).
+// Faces: smile while running/idle, a smirk now and then while waiting, laughing in the air, tongue out when caught.
 const PLAYER = {
-  run: frames('lola/run', [1, 2, 1, 2, 3, 2], [100, 150, 150, 150, 150, 150]),
-  idle: frames('lola/run', [2, 3, 2, 3, 2, 3], [650, 150, 450, 200, 950, 100]),
-  jump: frames('lola/run', [1], 100),
-  box: { ox: 16, oy: 14, w: 104, h: 95 },
+  run: frames('juliana/run', [1, 2, 3, 4, 5, 6], 95),
+  idle: frames('juliana/idle', [1, 2, 1, 2, 3, 1], [700, 500, 600, 500, 900, 400]),
+  jump: frames('juliana/jump', [1], 100),
+  hurt: frames('juliana/hurt', [1], 100),
+  box: { ox: 54, oy: 24, w: 46, h: 164 },
 };
 
 const UI_IMAGES = [
